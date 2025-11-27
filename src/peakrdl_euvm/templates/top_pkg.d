@@ -5,6 +5,5 @@ import esdl;
 import uvm;
 import uvm.reg;
 import std.format: format;
-    {{ main.top()|indent}}
-
+{{ main.top()}}
 

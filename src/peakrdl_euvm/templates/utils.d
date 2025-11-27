@@ -53,3 +53,32 @@
         {%- endfor -%}
     {%- endif -%}
 {%- endmacro %}
+
+{% macro array_element(node, index) -%}
+    {%- if node.is_array -%}
+       {{- node.inst_name + "_elem%d" % index -}}
+    {%- endif -%}
+{%- endmacro %}
+
+{% macro array_iterator(index) -%}
+    {{- "i%d" % index -}}
+{%- endmacro %}
+
+{% macro array_subarray(node, index) -%}
+    {%- if node.is_array -%}
+        {%- if index == 0 -%}
+            {{- "this." + node.inst_name -}}
+        {%- else -%}
+            {{- node.inst_name + "_elem%d" % (index|int - 1) -}}
+        {%- endif -%}
+    {%- endif -%}
+{%- endmacro %}
+
+{% macro array_elements_leaf(node) -%}
+    {%- if node.is_array -%}
+        {%- for dim in node.array_dimensions -%}
+            {%- if loop.last %} {{- node.inst_name + "_elem%d" % loop.index0 -}} {% endif -%}
+        {%- endfor -%}
+    {%- endif -%}
+{%- endmacro %}
+

@@ -1,0 +1,45 @@
+[build-system]
+requires = ["setuptools", "setuptools-scm"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "peakrdl-euvm"
+dynamic = ["version"]
+requires-python = ">=3.7"
+dependencies = [
+    "systemrdl-compiler ~= 1.31",
+    "jinja2 >= 2.9",
+]
+
+authors = [
+    {name="Alex Mykyta"},
+]
+description = "Generate eUVM register model from compiled SystemRDL input"
+readme = "README.md"
+license = {file = "LICENSE"}
+keywords = [
+    "SystemRDL", "PeakRDL", "CSR", "compiler", "tool", "registers", "generator",
+    "UVM", "eUVM",
+]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
+    "Operating System :: OS Independent",
+    "Topic :: Scientific/Engineering :: Electronic Design Automation (EDA)",
+    "Topic :: Software Development :: Documentation",
+]
+
+[project.urls]
+Source = "https://github.com/coverify/PeakRDL-euvm"
+Tracker = "https://github.com/coverify/PeakRDL-euvm/issues"
+Changelog = "https://github.com/coverify/PeakRDL-euvm/releases"
+
+[tool.setuptools.dynamic]
+version = {attr = "peakrdl_euvm.__about__.__version__"}
+
+[project.entry-points."peakrdl.exporters"]
+euvm = "peakrdl_euvm.__peakrdl__:Exporter"

@@ -1,12 +1,10 @@
 import os
 import re
-from typing import Optional
 
 import jinja2 as jj
 from systemrdl.node import RootNode, Node, RegNode, AddrmapNode, RegfileNode
 from systemrdl.node import FieldNode, MemNode, AddressableNode
 from systemrdl.rdltypes import AccessType, OnReadType, OnWriteType
-from systemrdl.component import Root
 from systemrdl import RDLWalker
 
 from .pre_export_listener import PreExportListener
@@ -119,7 +117,7 @@ class eUVMExporter:
         if isinstance(node, AddrmapNode) and node.get_property('bridge'):
             node.env.msg.warning(
                 "eUVM RAL generator does not have proper support for bridge addmaps yet. The 'bridge' property will be ignored.",
-                node.inst.property_src_ref.get('bridge', node.inst.inst_src_ref)
+                node.property_src_ref.get('bridge', node.inst_src_ref)
             )
 
         # First, traverse the model and collect some information
@@ -172,63 +170,13 @@ class eUVMExporter:
         return s
 
 
-    def _get_class_name_new(self, node: Node) -> str:
-        """
-        Returns the class type name.
-        Shall be unique enough to prevent type name collisions
-        """
-        if self.reuse_class_definitions:
-            pass
-        else:
-            class_name = node.get_rel_path(
-                self.top.parent,
-                hier_separator="__", array_suffix="", empty_array_suffix=""
-            )
-
-        return class_name
-
-    def _get_resolved_scope_path(self, node: Node, separator:str = "::") -> Optional[str]:
-        """
-        Returns the scope path, but with resolved type names
-        Returns None if any segment in the path is unknown
-        """
-
-        if node.inst.parent_scope is None:
-            # Scope information is not known
-            return None
-
-        if isinstance(node.inst.parent_scope, Root):
-            # Declaration of this was in the root scope
-            return node.type_name
-
-        # Due to namespace nesting properties, it is guaranteed that the parent
-        # scope definition is also going to be one of the node's ancestors.
-        # Seek up and find it
-        current_parent_node = node.parent
-
-        while current_parent_node:
-            if current_parent_node.inst.original_def is None:
-                # Original def reference is unknown
-                return None
-            if current_parent_node.inst.original_def is node.inst.parent_scope:
-                # Parent node's definition matches the scope we're looking for
-                parent_scope_path = self._get_resolved_scope_path(current_parent_node, separator)
-                if (parent_scope_path is None) or (node.type_name is None):
-                    return None
-                return parent_scope_path + separator + node.type_name
-
-            current_parent_node = current_parent_node.parent
-
-        # Failed to find the path
-        return None
-
     def _get_class_name(self, node: Node) -> str:
         """
         Returns the class type name.
         Shall be unique enough to prevent type name collisions
         """
         if self.reuse_class_definitions:
-            scope_path = self._get_resolved_scope_path(node, "__")
+            scope_path = node.get_global_type_name("__")
 
             if scope_path is not None:
                 class_name = scope_path
@@ -255,7 +203,7 @@ class eUVMExporter:
         a comment
         """
         if self.reuse_class_definitions:
-            scope_path = self._get_resolved_scope_path(node)
+            scope_path = node.get_global_type_name(".")
 
             if scope_path is not None:
                 friendly_name = scope_path
@@ -265,7 +213,7 @@ class eUVMExporter:
         else:
             friendly_name = node.get_rel_path(self.top.parent)
 
-        return type(node.inst).__name__ + " - " + friendly_name
+        return node.component_type_name + " - " + friendly_name
 
 
     def _get_inst_name(self, node: Node) -> str:
@@ -290,7 +238,7 @@ class eUVMExporter:
             obj = self.namespace_db[type_name]
 
             # Sanity-check for collisions
-            if (obj is None) or (obj is not node.inst.original_def):
+            if (obj is None) or (obj is not node.original_def):
                 raise RuntimeError("Namespace collision! Type-name generation is not robust enough to create unique names!")
 
             # This object likely represents the existing class definition
@@ -299,7 +247,7 @@ class eUVMExporter:
 
         # Need to emit a new definition
         # First, register it in the namespace
-        self.namespace_db[type_name] = node.inst.original_def
+        self.namespace_db[type_name] = node.original_def
         return True
 
 
